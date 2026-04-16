@@ -189,11 +189,16 @@ class Boss(Zombie):
             if dist_sq < warcry_radius * warcry_radius:
                 enemy.speed *= self.warcry_speed_buff
 
-    def update(self):
+    def update(self, enemies_group=None, all_sprites_group=None):
         super().update()
         if self.summon_cooldown > 0:
             self.summon_cooldown -= 1
+        elif enemies_group is not None and all_sprites_group is not None:
+            self.summon(enemies_group, all_sprites_group)
+
         if self.warcry_cooldown > 0:
             self.warcry_cooldown -= 1
+        elif enemies_group is not None:
+            self.warcry(enemies_group)
 
 

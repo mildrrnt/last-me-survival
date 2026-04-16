@@ -12,7 +12,6 @@ from game.entities.player import Player
 from game.entities.gate import GateRow
 from game.entities.xp_gem import XPGem
 from game.entities.powerup import PowerUp
-from game.entities.enemy import Boss
 from game.systems.level_generator import LevelGenerator
 from game.systems.particle_manager import ParticleManager
 from game.systems.upgrade_manager import UpgradeManager
