@@ -6,21 +6,24 @@ from game.constants import (
     ENEMY_CHARGER, ENEMY_SPLITTER,
     ENEMY_CONFIG
 )
+from game.entities.character import Character
 
 
-class Enemy(pygame.sprite.Sprite):
+class Zombie(Character):
     def __init__(self, enemy_type=ENEMY_SMALL, speed_bonus=0, hp_bonus=0):
-        super().__init__()
         config = ENEMY_CONFIG[enemy_type]
+        super().__init__(
+            hp=config["hp"] + int(hp_bonus),
+            width=config["width"],
+            height=config["height"],
+        )
         self.enemy_type = enemy_type
-        self.width = config["width"]
-        self.height = config["height"]
         self.color = config["color"]
         self.gold_value = config["gold"]
+        self.damage = config["damage"]
         self.is_elite = False
 
         # Build sprite
-        self.image = pygame.Surface((self.width, self.height), pygame.SRCALPHA)
         self._draw_zombie()
         self.original_image = self.image.copy()
 
@@ -29,15 +32,11 @@ class Enemy(pygame.sprite.Sprite):
         self.flash_image.fill(WHITE)
         self.hit_flash = 0
 
-        self.rect = self.image.get_rect()
-
         # Spawn randomly at top
         self.rect.x = random.randint(0, SCREEN_WIDTH - self.rect.width)
         self.rect.y = random.randint(-80, -30)
 
         self.speed = config["speed"] + speed_bonus
-        self.max_health = config["hp"] + int(hp_bonus)
-        self.health = self.max_health
 
         # Knockback
         self.knockback_x = 0
@@ -61,10 +60,6 @@ class Enemy(pygame.sprite.Sprite):
         eye_offset = w // 8
         pygame.draw.circle(self.image, RED, (w // 2 - eye_offset, eye_y), 2)
         pygame.draw.circle(self.image, RED, (w // 2 + eye_offset, eye_y), 2)
-
-        # Boss gets a scar or marking
-        if self.enemy_type == ENEMY_BOSS:
-            pygame.draw.line(self.image, BLACK, (w // 3, h // 6), (w * 2 // 3, h // 3), 2)
 
     def set_elite(self):
         """Mark this enemy as elite — tougher with a glow."""
@@ -135,7 +130,75 @@ class Enemy(pygame.sprite.Sprite):
         self.knockback_y = (dy / dist) * force
 
 
-class ChargerEnemy(Enemy):
+class Boss(Zombie):
+    """Boss zombie — larger, tougher, with summon and warcry abilities."""
+
+    def __init__(self, speed_bonus=0, hp_bonus=0):
+        super().__init__(enemy_type=ENEMY_BOSS, speed_bonus=speed_bonus, hp_bonus=hp_bonus)
+        self._draw_boss()
+        self.original_image = self.image.copy()
+
+        # Summon cooldown (frames)
+        self.summon_cooldown = 0
+        self.summon_interval = 180  # ~3 seconds at 60 FPS
+
+        # Warcry cooldown (frames)
+        self.warcry_cooldown = 0
+        self.warcry_interval = 300  # ~5 seconds at 60 FPS
+        self.warcry_speed_buff = 1.5
+
+    def _draw_boss(self):
+        """Draw boss with scar marking."""
+        self._draw_zombie()
+        w, h = self.width, self.height
+        pygame.draw.line(self.image, BLACK, (w // 3, h // 6), (w * 2 // 3, h // 3), 2)
+
+    def summon(self, enemies_group, all_sprites_group):
+        """Spawn smaller zombies around the boss."""
+        if self.summon_cooldown > 0:
+            return []
+
+        self.summon_cooldown = self.summon_interval
+        minions = []
+        for offset_x in [-30, 30]:
+            minion = Zombie(
+                enemy_type=ENEMY_SMALL,
+                speed_bonus=0.5,
+                hp_bonus=0,
+            )
+            minion.rect.centerx = self.rect.centerx + offset_x
+            minion.rect.centery = self.rect.centery
+            minion.gold_value = 1
+            enemies_group.add(minion)
+            all_sprites_group.add(minion)
+            minions.append(minion)
+        return minions
+
+    def warcry(self, enemies_group):
+        """Buff nearby zombies with a speed boost."""
+        if self.warcry_cooldown > 0:
+            return
+
+        self.warcry_cooldown = self.warcry_interval
+        warcry_radius = 150
+        for enemy in enemies_group:
+            if enemy is self:
+                continue
+            dx = enemy.rect.centerx - self.rect.centerx
+            dy = enemy.rect.centery - self.rect.centery
+            dist_sq = dx * dx + dy * dy
+            if dist_sq < warcry_radius * warcry_radius:
+                enemy.speed *= self.warcry_speed_buff
+
+    def update(self):
+        super().update()
+        if self.summon_cooldown > 0:
+            self.summon_cooldown -= 1
+        if self.warcry_cooldown > 0:
+            self.warcry_cooldown -= 1
+
+
+class ChargerEnemy(Zombie):
     """Approaches to mid-screen, pauses and vibrates, then rushes at player."""
 
     STATE_APPROACH = 0
@@ -222,7 +285,7 @@ class ChargerEnemy(Enemy):
             self.kill()
 
 
-class SplitterEnemy(Enemy):
+class SplitterEnemy(Zombie):
     """When killed, splits into 2 small fast enemies."""
 
     def __init__(self, speed_bonus=0, hp_bonus=0):
@@ -249,7 +312,7 @@ class SplitterEnemy(Enemy):
         """Return two small fast enemies at this position."""
         children = []
         for offset in [-12, 12]:
-            child = Enemy(
+            child = Zombie(
                 enemy_type=ENEMY_SMALL,
                 speed_bonus=1.5,
                 hp_bonus=0

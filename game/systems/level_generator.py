@@ -1,5 +1,5 @@
 import random
-from game.entities.enemy import Enemy, ChargerEnemy, SplitterEnemy
+from game.entities.enemy import Zombie, Boss, ChargerEnemy, SplitterEnemy
 from game.entities.gate import GateRow
 from game.constants import (
     SCREEN_WIDTH, TOTAL_WAVES, WAVE_ENEMIES_BASE, GATE_INTERVAL_WAVES,
@@ -114,8 +114,13 @@ class LevelGenerator:
                 speed_bonus=speed_bonus,
                 hp_bonus=hp_bonus
             )
+        elif enemy_type == ENEMY_BOSS:
+            enemy = Boss(
+                speed_bonus=speed_bonus,
+                hp_bonus=hp_bonus
+            )
         else:
-            enemy = Enemy(
+            enemy = Zombie(
                 enemy_type=enemy_type,
                 speed_bonus=speed_bonus,
                 hp_bonus=hp_bonus
@@ -287,8 +292,7 @@ class LevelGenerator:
         """Wave 40: final boss with phase 2 reinforcements."""
         # Two mega bosses
         for _ in range(2):
-            boss = Enemy(
-                enemy_type=ENEMY_BOSS,
+            boss = Boss(
                 speed_bonus=0.6,
                 hp_bonus=self.difficulty_factor * 12
             )
@@ -297,7 +301,7 @@ class LevelGenerator:
 
         # Large minions
         for _ in range(5):
-            e = Enemy(
+            e = Zombie(
                 enemy_type=ENEMY_LARGE,
                 speed_bonus=self.difficulty_factor * 0.15,
                 hp_bonus=self.difficulty_factor * 4
