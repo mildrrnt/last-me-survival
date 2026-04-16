@@ -194,6 +194,10 @@ class GameManager:
         # Bullet -> Enemy  (dokill=False on both sides; Bullet.collide kills the bullet)
         hits = pygame.sprite.groupcollide(self.enemies, self.projectiles, False, False)
         for enemy, bullet_list in hits.items():
+            # Skip enemies already in death animation
+            if enemy.dying:
+                continue
+
             for bullet in bullet_list:
                 if bullet.alive():
                     bullet.collide(enemy, self)
@@ -236,7 +240,12 @@ class GameManager:
                             pu = PowerUp(enemy.rect.centerx, enemy.rect.centery, ptype)
                             self.powerups.add(pu)
 
-                    enemy.kill()
+                    # Play death animation, then kill() fires in Zombie.update()
+                    enemy.dying = True
+                    enemy.set_animation_state("die")
+            else:
+                    # Still alive — play hurt animation
+                    enemy.set_animation_state("hurt")
 
         # Gem -> Player collection (magnet already pulls them close)
         collected_gems = pygame.sprite.spritecollide(self.player, self.gems, True)
@@ -253,15 +262,18 @@ class GameManager:
         for pu in collected_powerups:
             pu.collide(self.player, self)
 
-        # Enemy -> Player
-        player_hits = pygame.sprite.spritecollide(self.player, self.enemies, True)
+        # Enemy -> Player (skip dying enemies)
+        player_hits = pygame.sprite.spritecollide(self.player, self.enemies, False)
         for enemy in player_hits:
+            if enemy.dying:
+                continue
             # Shield blocks damage
             if POWERUP_SHIELD in self.active_powerups:
                 self.particle_manager.spawn_explosion(
                     self.player.rect.centerx, self.player.rect.centery,
                     count=15, color=(100, 180, 255)
                 )
+                enemy.kill()
                 continue
 
             damage = enemy.damage
@@ -278,6 +290,7 @@ class GameManager:
                 self.player.rect.centerx, self.player.rect.centery,
                 count=20, color=RED
             )
+            enemy.kill()
             if self.player.health <= 0:
                 self.player.health = 0
                 self.state = STATE_GAMEOVER

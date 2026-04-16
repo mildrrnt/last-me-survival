@@ -17,14 +17,21 @@ class Zombie(Character):
             height=config["height"],
         )
         self.enemy_type = enemy_type
-        self.color = config["color"]
         self.gold_value = config["gold"]
         self.damage = config["damage"]
         self.is_elite = False
 
-        # Build sprite
-        self._draw_zombie()
-        self.original_image = self.image.copy()
+        # Animation state
+        self.current_state = "idle"
+        self.frame_index = 0
+        self.frame_timer = 0
+        self.frame_duration = 6  # game-frames per animation-frame (10 FPS at 60 FPS)
+        self.dying = False
+
+        # Load sprite sheet animations
+        self._setup_animations()
+        self.image = self.animations["idle"][0]
+        self.rect = self.image.get_rect()
 
         # Flash image
         self.flash_image = pygame.Surface((self.width, self.height), pygame.SRCALPHA)
@@ -41,24 +48,39 @@ class Zombie(Character):
         self.knockback_x = 0
         self.knockback_y = 0
 
-    def _draw_zombie(self):
-        """Draw a simple zombie sprite based on type."""
-        w, h = self.width, self.height
-        self.image.fill((0, 0, 0, 0))
+    def _extract_frames_strip(self, filepath, num_frames=None):
+        """Load a horizontal strip image and slice it into frames."""
+        strip = pygame.image.load(filepath).convert_alpha()
+        frame_h = strip.get_height()
+        if num_frames is None:
+            num_frames = max(1, strip.get_width() // frame_h)
+        frame_w = strip.get_width() // num_frames
+        frames = []
+        for col in range(num_frames):
+            rect = pygame.Rect(col * frame_w, 0, frame_w, frame_h)
+            frame = strip.subsurface(rect).copy()
+            if (frame_w, frame_h) != (self.width, self.height):
+                frame = pygame.transform.scale(frame, (self.width, self.height))
+            frames.append(frame)
+        return frames
 
-        # Body
-        body_rect = pygame.Rect(w // 6, h // 3, w * 2 // 3, h * 2 // 3)
-        pygame.draw.rect(self.image, self.color, body_rect)
+    def _setup_animations(self):
+        config = ENEMY_CONFIG[self.enemy_type]
+        self.animations = {}
+        for name, info in config["animations"].items():
+            self.animations[name] = self._extract_frames_strip(
+                info["file"], info.get("frames")
+            )
 
-        # Head
-        head_radius = w // 4
-        pygame.draw.circle(self.image, self.color, (w // 2, h // 4), head_radius)
-
-        # Eyes (red dots)
-        eye_y = h // 4
-        eye_offset = w // 8
-        pygame.draw.circle(self.image, RED, (w // 2 - eye_offset, eye_y), 2)
-        pygame.draw.circle(self.image, RED, (w // 2 + eye_offset, eye_y), 2)
+    def set_animation_state(self, state):
+        """Switch to a new animation. Resets frame to 0."""
+        if state == self.current_state:
+            return
+        if state not in self.animations:
+            return
+        self.current_state = state
+        self.frame_index = 0
+        self.frame_timer = 0
 
     def set_elite(self):
         """Mark this enemy as elite — tougher with a glow."""
@@ -66,32 +88,54 @@ class Zombie(Character):
         self.max_health = int(self.max_health * 2.5)
         self.health = self.max_health
         self.gold_value = int(self.gold_value * 2)
-        # Redraw with gold border glow
-        self._draw_zombie()
-        w, h = self.width, self.height
-        pygame.draw.rect(self.image, (255, 200, 50), (0, 0, w, h), 2)
-        self.original_image = self.image.copy()
+        # Add gold border glow to every animation frame
+        for anim_name, frames in self.animations.items():
+            for i, frame in enumerate(frames):
+                tinted = frame.copy()
+                w, h = tinted.get_size()
+                pygame.draw.rect(tinted, (255, 200, 50), (0, 0, w, h), 2)
+                frames[i] = tinted
 
     def update(self):
-        self.rect.y += self.speed
+        # Skip movement when dying
+        if not self.dying:
+            self.rect.y += self.speed
 
-        # Apply knockback
-        if self.knockback_x != 0 or self.knockback_y != 0:
-            self.rect.x += int(self.knockback_x)
-            self.rect.y += int(self.knockback_y)
-            self.knockback_x *= 0.8
-            self.knockback_y *= 0.8
-            if abs(self.knockback_x) < 0.5:
-                self.knockback_x = 0
-            if abs(self.knockback_y) < 0.5:
-                self.knockback_y = 0
+            # Apply knockback
+            if self.knockback_x != 0 or self.knockback_y != 0:
+                self.rect.x += int(self.knockback_x)
+                self.rect.y += int(self.knockback_y)
+                self.knockback_x *= 0.8
+                self.knockback_y *= 0.8
+                if abs(self.knockback_x) < 0.5:
+                    self.knockback_x = 0
+                if abs(self.knockback_y) < 0.5:
+                    self.knockback_y = 0
 
-        # Hit flash
+        # Advance animation frame
+        self.frame_timer += 1
+        if self.frame_timer >= self.frame_duration:
+            self.frame_timer = 0
+            self.frame_index += 1
+
+            frames = self.animations[self.current_state]
+            if self.frame_index >= len(frames):
+                if self.current_state == "die":
+                    self.kill()
+                    return
+                elif self.current_state == "hurt":
+                    self.set_animation_state("idle")
+                else:
+                    self.frame_index = 0
+
+        # Apply current frame (with flash override)
+        current_frame = self.animations[self.current_state][self.frame_index]
         if self.hit_flash > 0:
             self.hit_flash -= 1
-            self.image = self.flash_image
+            self.image = current_frame.copy()
+            self.image.fill((255, 255, 255, 128), special_flags=pygame.BLEND_RGBA_ADD)
         else:
-            self.image = self.original_image
+            self.image = current_frame
 
         # Keep within horizontal bounds
         if self.rect.left < 0:
@@ -134,8 +178,6 @@ class Boss(Zombie):
 
     def __init__(self, speed_bonus=0, hp_bonus=0):
         super().__init__(enemy_type=ENEMY_BOSS, speed_bonus=speed_bonus, hp_bonus=hp_bonus)
-        self._draw_boss()
-        self.original_image = self.image.copy()
 
         # Summon cooldown (frames)
         self.summon_cooldown = 0
@@ -145,12 +187,6 @@ class Boss(Zombie):
         self.warcry_cooldown = 0
         self.warcry_interval = 300  # ~5 seconds at 60 FPS
         self.warcry_speed_buff = 1.5
-
-    def _draw_boss(self):
-        """Draw boss with scar marking."""
-        self._draw_zombie()
-        w, h = self.width, self.height
-        pygame.draw.line(self.image, BLACK, (w // 3, h // 6), (w * 2 // 3, h // 3), 2)
 
     def summon(self, enemies_group, all_sprites_group):
         """Spawn smaller zombies around the boss."""
@@ -200,5 +236,4 @@ class Boss(Zombie):
             self.warcry_cooldown -= 1
         elif enemies_group is not None:
             self.warcry(enemies_group)
-
 
