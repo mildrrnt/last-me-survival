@@ -75,7 +75,7 @@ class GameManager:
                 self.state = STATE_PLAYING
 
         elif self.state == STATE_PLAYING:
-            pass  # Input handled in player.update via key polling
+            self.player.handle_event(event)
 
         elif self.state == STATE_UPGRADE:
             if event.type == pygame.MOUSEBUTTONDOWN:
