@@ -138,10 +138,7 @@ class UIManager:
         screen.blit(wave_text, (x + bar_w // 2 - wave_text.get_width() // 2, y + 12))
 
     def _draw_weapon_name(self, screen):
-        player = self.game_manager.player
-        weapon = player.weapon
-        text = self.font_small.render(weapon.name, True, weapon.color)
-        screen.blit(text, (10, 52))
+        self.game_manager.player.weapon.draw(screen, 10, 52)
 
     def _draw_combo_counter(self, screen):
         combo = self.game_manager.combo_manager
