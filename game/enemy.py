@@ -5,7 +5,7 @@ from game.constants import (
     ENEMY_SMALL, ENEMY_MEDIUM, ENEMY_LARGE, ENEMY_BOSS,
     ENEMY_CONFIG
 )
-from game.entities.character import Character
+from game.character import Character
 
 
 class Zombie(Character):
@@ -236,4 +236,3 @@ class Boss(Zombie):
             self.warcry_cooldown -= 1
         elif enemies_group is not None:
             self.warcry(enemies_group)
-
