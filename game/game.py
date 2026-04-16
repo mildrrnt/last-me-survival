@@ -356,7 +356,11 @@ class Game:
                                  count=20, color=RED)
             if self.player.health <= 0:
                 self.player.health = 0
+                self.player.dying = True
+                self.player.set_animation_state("die")
                 self.state = STATE_GAMEOVER
+            else:
+                self.player.set_animation_state("hurt")
 
         # Player -> Gates
         gates_hit = pygame.sprite.spritecollide(self.player, self.gates, False)

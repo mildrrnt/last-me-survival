@@ -59,12 +59,28 @@ ENEMY_BOSS = "boss"
 
 # Enemy Animations
 
-ENEMY_ANIMATIONS = {
+SMALL_ZOMBIE_ANIMATIONS = {
+    "idle":   {"file": "game/assets/small-zombie/idle.png"},
+    "fly":    {"file": "game/assets/small-zombie/fly.png"},
+    "attack": {"file": "game/assets/small-zombie/attack.png"},
+    "hurt":   {"file": "game/assets/small-zombie/hurt.png"},
+    "die":    {"file": "game/assets/small-zombie/die.png"},
+}
+
+MEDIUM_ZOMBIE_ANIMATIONS = {
     "idle":   {"file": "game/assets/zombie/idle.png"},
     "fly":    {"file": "game/assets/zombie/fly.png"},
     "attack": {"file": "game/assets/zombie/attack.png"},
     "hurt":   {"file": "game/assets/zombie/hurt.png"},
     "die":    {"file": "game/assets/zombie/die.png"},
+}
+
+LARGE_ZOMBIE_ANIMATIONS = {
+    "idle":   {"file": "game/assets/large-zombie/idle.png"},
+    "fly":    {"file": "game/assets/large-zombie/fly.png"},
+    "attack": {"file": "game/assets/large-zombie/attack.png"},
+    "hurt":   {"file": "game/assets/large-zombie/hurt.png"},
+    "die":    {"file": "game/assets/large-zombie/die.png"},
 }
 
 BOSS_ANIMATIONS = {
@@ -75,11 +91,20 @@ BOSS_ANIMATIONS = {
     "die":    {"file": "game/assets/boss/die.png"},
 }
 
+# Player Animations
+
+PLAYER_ANIMATIONS = {
+    "idle":   {"file": "game/assets/player/idle.png"},
+    "move":   {"file": "game/assets/player/move.png"},
+    "hurt":   {"file": "game/assets/player/hurt.png"},
+    "die":    {"file": "game/assets/player/die.png"},
+}
+
 # Enemy Config: (width, height, base_hp, base_speed, gold_value)
 ENEMY_CONFIG = {
-    ENEMY_SMALL:    {"width": 24, "height": 24, "hp": 15,  "speed": 3.0, "gold": 1,  "damage": 12, "color": ZOMBIE_GREEN, "animations": ENEMY_ANIMATIONS},
-    ENEMY_MEDIUM:   {"width": 32, "height": 32, "hp": 40,  "speed": 2.4, "gold": 3,  "damage": 18, "color": ZOMBIE_DARK,  "animations": ENEMY_ANIMATIONS},
-    ENEMY_LARGE:    {"width": 44, "height": 44, "hp": 90,  "speed": 1.6, "gold": 8,  "damage": 25, "color": DARK_RED,     "animations": ENEMY_ANIMATIONS},
+    ENEMY_SMALL:    {"width": 32, "height": 32, "hp": 15,  "speed": 3.0, "gold": 1,  "damage": 12, "color": ZOMBIE_GREEN, "animations": SMALL_ZOMBIE_ANIMATIONS},
+    ENEMY_MEDIUM:   {"width": 44, "height": 44, "hp": 40,  "speed": 2.4, "gold": 3,  "damage": 18, "color": ZOMBIE_DARK,  "animations": MEDIUM_ZOMBIE_ANIMATIONS},
+    ENEMY_LARGE:    {"width": 56, "height": 56, "hp": 90,  "speed": 1.6, "gold": 8,  "damage": 25, "color": DARK_RED,     "animations": LARGE_ZOMBIE_ANIMATIONS},
     ENEMY_BOSS:     {"width": 64, "height": 64, "hp": 300, "speed": 1.0, "gold": 25, "damage": 40, "color": ZOMBIE_BOSS,  "animations": BOSS_ANIMATIONS},
 }
 

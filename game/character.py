@@ -34,23 +34,18 @@ class Character(pygame.sprite.Sprite):
         """Check collision with another sprite."""
         return pygame.sprite.collide_rect(self, other)
 
-    def _extract_frames_grid(self, sheet, row, num_frames, frame_w, frame_h):
-        """Slice one row of a sprite sheet into a list of Surfaces."""
-        frames = []
-        for col in range(num_frames):
-            rect = pygame.Rect(col * frame_w, row * frame_h, frame_w, frame_h)
-            frame = sheet.subsurface(rect).copy()
-            frames.append(frame)
-        return frames
-    
-    def _extract_frames_strip(self, filepath, num_frames):
+    def _extract_frames_strip(self, filepath, num_frames=None):
         """Load a horizontal strip image and slice it into frames."""
         strip = pygame.image.load(filepath).convert_alpha()
-        frame_w = strip.get_width() // num_frames
         frame_h = strip.get_height()
+        if num_frames is None:
+            num_frames = max(1, strip.get_width() // frame_h)
+        frame_w = strip.get_width() // num_frames
         frames = []
         for col in range(num_frames):
             rect = pygame.Rect(col * frame_w, 0, frame_w, frame_h)
             frame = strip.subsurface(rect).copy()
+            if (frame_w, frame_h) != (self.width, self.height):
+                frame = pygame.transform.scale(frame, (self.width, self.height))
             frames.append(frame)
         return frames

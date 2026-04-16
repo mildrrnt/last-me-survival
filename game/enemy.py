@@ -48,22 +48,6 @@ class Zombie(Character):
         self.knockback_x = 0
         self.knockback_y = 0
 
-    def _extract_frames_strip(self, filepath, num_frames=None):
-        """Load a horizontal strip image and slice it into frames."""
-        strip = pygame.image.load(filepath).convert_alpha()
-        frame_h = strip.get_height()
-        if num_frames is None:
-            num_frames = max(1, strip.get_width() // frame_h)
-        frame_w = strip.get_width() // num_frames
-        frames = []
-        for col in range(num_frames):
-            rect = pygame.Rect(col * frame_w, 0, frame_w, frame_h)
-            frame = strip.subsurface(rect).copy()
-            if (frame_w, frame_h) != (self.width, self.height):
-                frame = pygame.transform.scale(frame, (self.width, self.height))
-            frames.append(frame)
-        return frames
-
     def _setup_animations(self):
         config = ENEMY_CONFIG[self.enemy_type]
         self.animations = {}
