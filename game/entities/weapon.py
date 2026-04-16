@@ -1,7 +1,7 @@
 import pygame
 import math
 from game.constants import WEAPON_CONFIG, WEAPON_SINGLE, WEAPON_SPREAD, WEAPON_RAPID
-from game.entities.projectile import Projectile
+from game.entities.bullet import Bullet
 
 
 class Weapon:
@@ -51,7 +51,7 @@ class Weapon:
         for i in range(count):
             angle_offset = start_angle + i * self.spread_angle if count > 1 else 0
             spread_x = target.rect.centerx + math.tan(math.radians(angle_offset)) * 200
-            p = Projectile(
+            p = Bullet(
                 start_x, start_y,
                 spread_x, target.rect.centery,
                 self.damage, self.color
@@ -65,3 +65,18 @@ class Weapon:
         """Calculate a rough power rating for display."""
         dps = (self.damage * self.bullet_count) / (self.fire_rate / 1000.0)
         return int(dps)
+
+    # ------------------------------------------------------------------
+    # Spec method: draw
+    # ------------------------------------------------------------------
+    def draw(self, surface, x, y):
+        """Draw a compact weapon badge (colored background + name) at (x, y)."""
+        font = pygame.font.SysFont(None, 20)
+        text = font.render(self.name, True, (255, 255, 255))
+        badge_w = text.get_width() + 12
+        badge_h = text.get_height() + 6
+        badge = pygame.Surface((badge_w, badge_h), pygame.SRCALPHA)
+        pygame.draw.rect(badge, (*self.color, 180), (0, 0, badge_w, badge_h), border_radius=4)
+        pygame.draw.rect(badge, (255, 255, 255, 120), (0, 0, badge_w, badge_h), 1, border_radius=4)
+        badge.blit(text, (6, 3))
+        surface.blit(badge, (x, y))

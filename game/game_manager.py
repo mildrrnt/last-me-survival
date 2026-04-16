@@ -5,7 +5,7 @@ from game.constants import (
     STATE_START, STATE_PLAYING, STATE_UPGRADE, STATE_GAMEOVER, STATE_WIN,
     XP_VALUES, XP_TO_FIRST_LEVEL, POWERUP_DROP_CHANCE, POWERUP_DROP_ENEMIES,
     POWERUP_RAPID_FIRE, POWERUP_SHIELD, POWERUP_DAMAGE_BOOST,
-    POWERUP_DURATIONS, POWERUP_COLORS,
+    POWERUP_COLORS,
     WAVE_TYPE_BLOOD_MOON
 )
 from game.entities.player import Player
@@ -65,9 +65,8 @@ class GameManager:
         # Spawn warning flash
         self.spawn_warning_timer = 0
 
-        # Store original weapon stats for power-up restoration
-        self._original_fire_rate_bonus = 0
-        self._original_damage_bonus = 0
+        # Holds active PowerUp instances so deactivate() can be called when timers expire
+        self._active_powerup_instances = {}
 
     def handle_event(self, event):
         if self.state == STATE_START:
@@ -112,10 +111,9 @@ class GameManager:
         self.screen_shake = 0
         self.bg_scroll_y = 0
         self.active_powerups = {}
+        self._active_powerup_instances = {}
         self.boss_flash_timer = 0
         self.spawn_warning_timer = 0
-        self._original_fire_rate_bonus = 0
-        self._original_damage_bonus = 0
 
     def update(self):
         if self.state == STATE_PLAYING:
@@ -181,30 +179,9 @@ class GameManager:
 
         for ptype in expired:
             del self.active_powerups[ptype]
-            self._deactivate_powerup(ptype)
-
-    def _activate_powerup(self, ptype):
-        """Apply power-up effect to the player."""
-        if ptype == POWERUP_RAPID_FIRE:
-            # Store current bonus before modifying
-            if ptype not in self.active_powerups:
-                self._original_fire_rate_bonus = self.player.weapon.bonus_fire_rate
-            self.player.weapon.bonus_fire_rate = self._original_fire_rate_bonus - 200
-        elif ptype == POWERUP_SHIELD:
-            pass  # Shield is checked in collision code
-        elif ptype == POWERUP_DAMAGE_BOOST:
-            if ptype not in self.active_powerups:
-                self._original_damage_bonus = self.player.weapon.bonus_damage
-            self.player.weapon.bonus_damage = self._original_damage_bonus + 15
-
-        self.active_powerups[ptype] = POWERUP_DURATIONS[ptype]
-
-    def _deactivate_powerup(self, ptype):
-        """Remove power-up effect from player."""
-        if ptype == POWERUP_RAPID_FIRE:
-            self.player.weapon.bonus_fire_rate = self._original_fire_rate_bonus
-        elif ptype == POWERUP_DAMAGE_BOOST:
-            self.player.weapon.bonus_damage = self._original_damage_bonus
+            pu_obj = self._active_powerup_instances.pop(ptype, None)
+            if pu_obj:
+                pu_obj.deactivate(self.player)
 
     def trigger_upgrade(self):
         self.state = STATE_UPGRADE
@@ -215,16 +192,14 @@ class GameManager:
         self.state = STATE_WIN
 
     def check_collisions(self):
-        # Projectile -> Enemy
-        hits = pygame.sprite.groupcollide(self.enemies, self.projectiles, False, True)
-        for enemy, projectile_list in hits.items():
-            for p in projectile_list:
-                enemy.health -= p.damage
-                enemy.hit_flash = 5
-                enemy.apply_knockback(p.rect.centerx, p.rect.centery, force=2)
-                self.ui_manager.add_damage_text(enemy.rect.centerx, enemy.rect.top, p.damage)
+        # Bullet -> Enemy  (dokill=False on both sides; Bullet.collide kills the bullet)
+        hits = pygame.sprite.groupcollide(self.enemies, self.projectiles, False, False)
+        for enemy, bullet_list in hits.items():
+            for bullet in bullet_list:
+                if bullet.alive():
+                    bullet.collide(enemy, self)
 
-                if enemy.health <= 0:
+            if enemy.health <= 0:
                     # Gold drop
                     gold = enemy.gold_value
                     self.player.gold += gold
@@ -274,18 +249,10 @@ class GameManager:
                 xp_gain, color=(0, 230, 64)
             )
 
-        # Powerup -> Player collection
-        collected_powerups = pygame.sprite.spritecollide(self.player, self.powerups, True)
+        # Powerup -> Player collection  (dokill=False; PowerUp.collide kills itself)
+        collected_powerups = pygame.sprite.spritecollide(self.player, self.powerups, False)
         for pu in collected_powerups:
-            self._activate_powerup(pu.powerup_type)
-            self.ui_manager.add_effect_text(
-                self.player.rect.centerx, self.player.rect.top - 20,
-                pu.label, True
-            )
-            self.particle_manager.spawn_explosion(
-                self.player.rect.centerx, self.player.rect.centery,
-                count=12, color=pu.color
-            )
+            pu.collide(self.player, self)
 
         # Enemy -> Player
         player_hits = pygame.sprite.spritecollide(self.player, self.enemies, True)
@@ -316,40 +283,10 @@ class GameManager:
                 self.player.health = 0
                 self.state = STATE_GAMEOVER
 
-        # Player -> Gates
-        gates_hit = pygame.sprite.spritecollide(self.player, self.gates, True)
+        # Player -> Gates  (dokill=False; Gate.collide kills itself)
+        gates_hit = pygame.sprite.spritecollide(self.player, self.gates, False)
         for gate in gates_hit:
-            self._apply_gate_effect(gate)
-
-    def _apply_gate_effect(self, gate):
-        player = self.player
-
-        if gate.is_multiplier:
-            # Multiplier gates
-            if gate.effect_type == 'damage':
-                player.weapon.bonus_damage += player.weapon.damage  # Effectively double
-            elif gate.effect_type == 'fire_rate':
-                player.weapon.bonus_fire_rate -= abs(player.weapon.fire_rate) // 2
-        else:
-            # Additive gates
-            if gate.effect_type == 'damage':
-                player.weapon.bonus_damage += gate.value
-            elif gate.effect_type == 'fire_rate':
-                player.weapon.bonus_fire_rate += gate.value
-            elif gate.effect_type == 'speed':
-                player.speed = max(2, player.speed + gate.value)
-            elif gate.effect_type == 'multishot':
-                player.weapon.bonus_bullets += gate.value
-
-        # Visual feedback
-        self.particle_manager.spawn_gate_effect(
-            player.rect.centerx, player.rect.centery, gate.positive
-        )
-        self.ui_manager.add_effect_text(
-            player.rect.centerx, player.rect.top - 20,
-            gate.label_text, gate.positive
-        )
-        self.screen_shake = max(self.screen_shake, 3)
+            gate.collide(self.player, self)
 
     def draw(self):
         # Shake offset

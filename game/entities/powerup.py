@@ -4,7 +4,7 @@ import random
 from game.constants import (
     SCREEN_HEIGHT,
     POWERUP_RAPID_FIRE, POWERUP_SHIELD, POWERUP_DAMAGE_BOOST,
-    POWERUP_COLORS, POWERUP_LABELS
+    POWERUP_COLORS, POWERUP_LABELS, POWERUP_DURATIONS
 )
 
 
@@ -24,6 +24,19 @@ class PowerUp(pygame.sprite.Sprite):
         self.pulse_timer = random.uniform(0, math.pi * 2)
         self.drift_speed = 0.5
         self.lifetime = 480  # 8 seconds at 60fps
+
+        # Spec attributes: duration (active effect length) and value (effect magnitude)
+        self.duration = POWERUP_DURATIONS[powerup_type]
+        _effect_values = {
+            POWERUP_RAPID_FIRE:   200,  # ms subtracted from fire_rate
+            POWERUP_SHIELD:         1,  # blocks one hit
+            POWERUP_DAMAGE_BOOST:  15,  # bonus damage added
+        }
+        self.value = _effect_values.get(powerup_type, 0)
+
+        # Storage for pre-activation weapon stats (set in activate())
+        self._original_fire_rate = None
+        self._original_damage = None
 
         # Icon symbols
         self.icon_map = {
@@ -76,3 +89,62 @@ class PowerUp(pygame.sprite.Sprite):
             self.image.set_alpha(alpha)
         else:
             self.image.set_alpha(255)
+
+    # ------------------------------------------------------------------
+    # Spec method: activate
+    # ------------------------------------------------------------------
+    def activate(self, player, game_manager):
+        """Apply this powerup's effect to player and register the active timer."""
+        if self.powerup_type == POWERUP_RAPID_FIRE:
+            if self.powerup_type not in game_manager.active_powerups:
+                # First activation — snapshot current bonus
+                self._original_fire_rate = player.weapon.bonus_fire_rate
+            else:
+                # Already active — inherit original so the effect does not stack
+                prev = game_manager._active_powerup_instances.get(self.powerup_type)
+                self._original_fire_rate = (
+                    prev._original_fire_rate if prev else player.weapon.bonus_fire_rate
+                )
+            player.weapon.bonus_fire_rate = self._original_fire_rate - self.value
+
+        elif self.powerup_type == POWERUP_SHIELD:
+            pass  # Shield is checked per-frame in GameManager.check_collisions
+
+        elif self.powerup_type == POWERUP_DAMAGE_BOOST:
+            if self.powerup_type not in game_manager.active_powerups:
+                self._original_damage = player.weapon.bonus_damage
+            else:
+                prev = game_manager._active_powerup_instances.get(self.powerup_type)
+                self._original_damage = (
+                    prev._original_damage if prev else player.weapon.bonus_damage
+                )
+            player.weapon.bonus_damage = self._original_damage + self.value
+
+        game_manager.active_powerups[self.powerup_type] = self.duration
+        game_manager._active_powerup_instances[self.powerup_type] = self
+
+    # ------------------------------------------------------------------
+    # Spec method: deactivate
+    # ------------------------------------------------------------------
+    def deactivate(self, player):
+        """Restore player stats to their pre-activation values."""
+        if self.powerup_type == POWERUP_RAPID_FIRE and self._original_fire_rate is not None:
+            player.weapon.bonus_fire_rate = self._original_fire_rate
+        elif self.powerup_type == POWERUP_DAMAGE_BOOST and self._original_damage is not None:
+            player.weapon.bonus_damage = self._original_damage
+
+    # ------------------------------------------------------------------
+    # Spec method: collide
+    # ------------------------------------------------------------------
+    def collide(self, player, game_manager):
+        """Activate effect, trigger visual feedback, and remove this pickup."""
+        self.activate(player, game_manager)
+        game_manager.ui_manager.add_effect_text(
+            player.rect.centerx, player.rect.top - 20,
+            self.label, True
+        )
+        game_manager.particle_manager.spawn_explosion(
+            player.rect.centerx, player.rect.centery,
+            count=12, color=self.color
+        )
+        self.kill()
