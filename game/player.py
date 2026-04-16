@@ -1,59 +1,37 @@
 import pygame
 from game.constants import (
-    SCREEN_WIDTH, SCREEN_HEIGHT, WHITE, BLUE, DARK_GRAY,
-    WEAPON_SINGLE, WEAPON_SPREAD, WEAPON_RAPID
+    SCREEN_WIDTH, SCREEN_HEIGHT, BLUE, DARK_GRAY,
+    WEAPON_SINGLE
 )
-from game.entities.weapon import Weapon
+from game.character import Character
+from game.weapon import Weapon
 
 
-class Player(pygame.sprite.Sprite):
+class Player(Character):
     def __init__(self):
-        super().__init__()
-        # Build player sprite
-        self.base_size = 36
-        self.image = pygame.Surface((self.base_size, self.base_size), pygame.SRCALPHA)
+        super().__init__(hp=100, width=36, height=36)
         self._draw_player_sprite()
-        self.rect = self.image.get_rect()
         self.rect.centerx = SCREEN_WIDTH // 2
         self.rect.bottom = SCREEN_HEIGHT - 80
 
-        # Stats
         self.speed = 8
-        self.max_health = 100
-        self.health = self.max_health
         self.gold = 0
-
-        # Weapon
         self.weapon = Weapon(WEAPON_SINGLE)
-
-        # Forward auto-movement speed (slight upward drift)
         self.auto_move_y = 0
 
         # Mouse drag state
         self.dragging = False
 
     def _draw_player_sprite(self):
-        """Draw a simple character sprite."""
-        s = self.base_size
+        s = self.width
         self.image.fill((0, 0, 0, 0))
-        # Body
         pygame.draw.rect(self.image, BLUE, (s // 4, s // 4, s // 2, s // 2))
-        # Head
         pygame.draw.circle(self.image, (100, 150, 255), (s // 2, s // 4), s // 5)
-        # Gun indicator
         pygame.draw.rect(self.image, DARK_GRAY, (s // 2, 0, 4, s // 4))
 
     @property
     def damage(self):
         return self.weapon.damage
-
-    @property
-    def fire_rate(self):
-        return self.weapon.fire_rate
-
-    @property
-    def bullet_count(self):
-        return self.weapon.bullet_count
 
     @property
     def power(self):
@@ -79,6 +57,7 @@ class Player(pygame.sprite.Sprite):
             self.move(-1)
         if keys[pygame.K_RIGHT] or keys[pygame.K_d]:
             self.move(1)
+<<<<<<< HEAD:game/entities/player.py
 
         # Mouse drag: follow mouse x position
         if self.dragging:
@@ -91,6 +70,8 @@ class Player(pygame.sprite.Sprite):
                 if self.rect.right > SCREEN_WIDTH:
                     self.rect.right = SCREEN_WIDTH
 
+=======
+>>>>>>> 5f559eb (feat: restructured the OOP to be straightforward):game/player.py
         self.auto_fire(enemies, projectiles_group, all_sprites)
 
     def auto_fire(self, enemies, projectiles_group, all_sprites):
@@ -114,7 +95,6 @@ class Player(pygame.sprite.Sprite):
         return nearest
 
     def switch_weapon(self, weapon_type):
-        # Preserve bonuses across weapon switches
         old_bonus_dmg = self.weapon.bonus_damage
         old_bonus_rate = self.weapon.bonus_fire_rate
         old_bonus_bullets = self.weapon.bonus_bullets
