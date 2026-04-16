@@ -57,7 +57,7 @@ class Zombie(Character):
             )
 
     def set_animation_state(self, state):
-        """Switch to a new animation. Resets frame to 0."""
+        """Switch to a new animation if different from current. No-ops if already in the requested state."""
         if state == self.current_state:
             return
         if state not in self.animations:
@@ -72,13 +72,15 @@ class Zombie(Character):
         self.max_health = int(self.max_health * 2.5)
         self.health = self.max_health
         self.gold_value = int(self.gold_value * 2)
-        # Add gold border glow to every animation frame
+        # Copy and tint frames (don't mutate shared cache)
         for anim_name, frames in self.animations.items():
-            for i, frame in enumerate(frames):
+            tinted_frames = []
+            for frame in frames:
                 tinted = frame.copy()
                 w, h = tinted.get_size()
                 pygame.draw.rect(tinted, (255, 200, 50), (0, 0, w, h), 2)
-                frames[i] = tinted
+                tinted_frames.append(tinted)
+            self.animations[anim_name] = tinted_frames
 
     def update(self):
         # Skip movement when dying

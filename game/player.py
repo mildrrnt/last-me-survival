@@ -17,6 +17,9 @@ class Player(Character):
         self.frame_timer = 0
         self.frame_duration = 6
         self.dying = False
+        self.death_animation_done = False
+        self.death_loops = 0
+        self.death_loops_total = 3
 
         # Load sprite sheet animations
         self.animations = {}
@@ -39,7 +42,7 @@ class Player(Character):
         self.dragging = False
 
     def set_animation_state(self, state):
-        """Switch to a new animation. Resets frame to 0."""
+        """Switch to a new animation if different from current. No-ops if already in the requested state."""
         if state == self.current_state:
             return
         if state not in self.animations:
@@ -58,7 +61,12 @@ class Player(Character):
             frames = self.animations[self.current_state]
             if self.frame_index >= len(frames):
                 if self.current_state == "die":
-                    self.frame_index = len(frames) - 1
+                    self.death_loops += 1
+                    if self.death_loops >= self.death_loops_total:
+                        self.frame_index = len(frames) - 1
+                        self.death_animation_done = True
+                    else:
+                        self.frame_index = 0
                 elif self.current_state == "hurt":
                     self.set_animation_state("idle")
                 else:
