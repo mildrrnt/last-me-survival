@@ -35,8 +35,6 @@ RAPID_YELLOW = (255, 255, 100)
 DAMAGE_ORANGE = (255, 120, 30)
 GEM_GREEN = (0, 230, 64)
 ELITE_GOLD = (255, 200, 50)
-CHARGER_PURPLE = (160, 50, 200)
-SPLITTER_TEAL = (50, 180, 150)
 
 # Gameplay Constants
 SCROLL_SPEED = 5
@@ -58,17 +56,13 @@ ENEMY_SMALL = "small"
 ENEMY_MEDIUM = "medium"
 ENEMY_LARGE = "large"
 ENEMY_BOSS = "boss"
-ENEMY_CHARGER = "charger"
-ENEMY_SPLITTER = "splitter"
 
 # Enemy Config: (width, height, base_hp, base_speed, gold_value)
 ENEMY_CONFIG = {
-    ENEMY_SMALL:    {"width": 24, "height": 24, "hp": 15,  "speed": 3.0, "gold": 1,  "color": ZOMBIE_GREEN},
-    ENEMY_MEDIUM:   {"width": 32, "height": 32, "hp": 40,  "speed": 2.4, "gold": 3,  "color": ZOMBIE_DARK},
-    ENEMY_LARGE:    {"width": 44, "height": 44, "hp": 90,  "speed": 1.6, "gold": 8,  "color": DARK_RED},
-    ENEMY_BOSS:     {"width": 60, "height": 60, "hp": 300, "speed": 1.0, "gold": 25, "color": ZOMBIE_BOSS},
-    ENEMY_CHARGER:  {"width": 30, "height": 30, "hp": 50,  "speed": 2.0, "gold": 5,  "color": CHARGER_PURPLE},
-    ENEMY_SPLITTER: {"width": 34, "height": 34, "hp": 35,  "speed": 2.2, "gold": 4,  "color": SPLITTER_TEAL},
+    ENEMY_SMALL:    {"width": 24, "height": 24, "hp": 15,  "speed": 3.0, "gold": 1,  "damage": 12, "color": ZOMBIE_GREEN},
+    ENEMY_MEDIUM:   {"width": 32, "height": 32, "hp": 40,  "speed": 2.4, "gold": 3,  "damage": 18, "color": ZOMBIE_DARK},
+    ENEMY_LARGE:    {"width": 44, "height": 44, "hp": 90,  "speed": 1.6, "gold": 8,  "damage": 25, "color": DARK_RED},
+    ENEMY_BOSS:     {"width": 60, "height": 60, "hp": 300, "speed": 1.0, "gold": 25, "damage": 40, "color": ZOMBIE_BOSS},
 }
 
 # Weapon Config: (damage, fire_rate_ms, bullet_count, spread_angle)
@@ -84,8 +78,6 @@ XP_VALUES = {
     ENEMY_MEDIUM: 3,
     ENEMY_LARGE: 8,
     ENEMY_BOSS: 25,
-    ENEMY_CHARGER: 5,
-    ENEMY_SPLITTER: 4,
 }
 XP_TO_FIRST_LEVEL = 150
 GEM_MAGNET_RADIUS = 80
@@ -124,7 +116,7 @@ POWERUP_LABELS = {
     POWERUP_DAMAGE_BOOST: "DMG BOOST",
 }
 # Enemies that can drop power-ups
-POWERUP_DROP_ENEMIES = {ENEMY_LARGE, ENEMY_BOSS, ENEMY_CHARGER}
+POWERUP_DROP_ENEMIES = {ENEMY_LARGE, ENEMY_BOSS}
 
 # Wave Special Events
 WAVE_TYPE_NORMAL = "normal"

@@ -45,8 +45,7 @@ class ParticleManager:
     def spawn_death_explosion(self, x, y, enemy_type="small"):
         """Big explosion on enemy death — bigger than before."""
         base_count = {
-            "small": 8, "medium": 14, "large": 22, "boss": 40,
-            "charger": 16, "splitter": 12
+            "small": 8, "medium": 14, "large": 22, "boss": 40
         }.get(enemy_type, 10)
         count = min(base_count, PARTICLE_CAP - len(self.particles))
         if count <= 0:
