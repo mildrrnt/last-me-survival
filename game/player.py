@@ -1,7 +1,7 @@
 import pygame
 from game.constants import (
-    SCREEN_WIDTH, SCREEN_HEIGHT, BLUE, DARK_GRAY,
-    WEAPON_SINGLE
+    SCREEN_WIDTH, SCREEN_HEIGHT,
+    WEAPON_SINGLE, PLAYER_ANIMATIONS
 )
 from game.character import Character
 from game.weapon import Weapon
@@ -10,7 +10,26 @@ from game.weapon import Weapon
 class Player(Character):
     def __init__(self):
         super().__init__(hp=100, width=36, height=36)
-        self._draw_player_sprite()
+
+        # Animation state
+        self.current_state = "idle"
+        self.frame_index = 0
+        self.frame_timer = 0
+        self.frame_duration = 6
+        self.dying = False
+        self.death_animation_done = False
+        self.death_loops = 0
+        self.death_loops_total = 3
+
+        # Load sprite sheet animations
+        self.animations = {}
+        for name, info in PLAYER_ANIMATIONS.items():
+            self.animations[name] = self._extract_frames_strip(
+                info["file"], info.get("frames")
+            )
+
+        self.image = self.animations["idle"][0]
+        self.rect = self.image.get_rect()
         self.rect.centerx = SCREEN_WIDTH // 2
         self.rect.bottom = SCREEN_HEIGHT - 80
 
@@ -22,12 +41,38 @@ class Player(Character):
         # Mouse drag state
         self.dragging = False
 
-    def _draw_player_sprite(self):
-        s = self.width
-        self.image.fill((0, 0, 0, 0))
-        pygame.draw.rect(self.image, BLUE, (s // 4, s // 4, s // 2, s // 2))
-        pygame.draw.circle(self.image, (100, 150, 255), (s // 2, s // 4), s // 5)
-        pygame.draw.rect(self.image, DARK_GRAY, (s // 2, 0, 4, s // 4))
+    def set_animation_state(self, state):
+        """Switch to a new animation if different from current. No-ops if already in the requested state."""
+        if state == self.current_state:
+            return
+        if state not in self.animations:
+            return
+        self.current_state = state
+        self.frame_index = 0
+        self.frame_timer = 0
+
+    def _advance_animation(self):
+        """Advance the animation frame timer."""
+        self.frame_timer += 1
+        if self.frame_timer >= self.frame_duration:
+            self.frame_timer = 0
+            self.frame_index += 1
+
+            frames = self.animations[self.current_state]
+            if self.frame_index >= len(frames):
+                if self.current_state == "die":
+                    self.death_loops += 1
+                    if self.death_loops >= self.death_loops_total:
+                        self.frame_index = len(frames) - 1
+                        self.death_animation_done = True
+                    else:
+                        self.frame_index = 0
+                elif self.current_state == "hurt":
+                    self.set_animation_state("idle")
+                else:
+                    self.frame_index = 0
+
+        self.image = self.animations[self.current_state][self.frame_index]
 
     @property
     def damage(self):
@@ -52,11 +97,19 @@ class Player(Character):
             self.dragging = False
 
     def update(self, enemies, projectiles_group, all_sprites):
+        if self.dying:
+            self._advance_animation()
+            return
+
+        moving = False
+
         keys = pygame.key.get_pressed()
         if keys[pygame.K_LEFT] or keys[pygame.K_a]:
             self.move(-1)
+            moving = True
         if keys[pygame.K_RIGHT] or keys[pygame.K_d]:
             self.move(1)
+            moving = True
 
         # Mouse drag: follow mouse x position
         if self.dragging:
@@ -68,7 +121,16 @@ class Player(Character):
                     self.rect.left = 0
                 if self.rect.right > SCREEN_WIDTH:
                     self.rect.right = SCREEN_WIDTH
+                moving = True
 
+        # Set animation based on movement (only if not in hurt state)
+        if self.current_state != "hurt":
+            if moving:
+                self.set_animation_state("move")
+            else:
+                self.set_animation_state("idle")
+
+        self._advance_animation()
         self.auto_fire(enemies, projectiles_group, all_sprites)
 
     def auto_fire(self, enemies, projectiles_group, all_sprites):

@@ -5,6 +5,8 @@ from game.constants import SCREEN_WIDTH
 class Character(pygame.sprite.Sprite):
     """Base class for all game characters (player, zombies, bosses)."""
 
+    _frame_cache = {}
+
     def __init__(self, hp, width, height):
         super().__init__()
         self.max_health = hp
@@ -33,3 +35,27 @@ class Character(pygame.sprite.Sprite):
     def collide(self, other):
         """Check collision with another sprite."""
         return pygame.sprite.collide_rect(self, other)
+
+    def _extract_frames_strip(self, filepath, num_frames=None):
+        """Load a horizontal strip image and slice it into frames.
+        Results are cached by (filepath, num_frames, target_size) so
+        repeated spawns of the same enemy type reuse the same surfaces."""
+        cache_key = (filepath, num_frames, self.width, self.height)
+        if cache_key in Character._frame_cache:
+            return Character._frame_cache[cache_key]
+
+        strip = pygame.image.load(filepath).convert_alpha()
+        frame_h = strip.get_height()
+        if num_frames is None:
+            num_frames = max(1, strip.get_width() // frame_h)
+        frame_w = strip.get_width() // num_frames
+        frames = []
+        for col in range(num_frames):
+            rect = pygame.Rect(col * frame_w, 0, frame_w, frame_h)
+            frame = strip.subsurface(rect).copy()
+            if (frame_w, frame_h) != (self.width, self.height):
+                frame = pygame.transform.scale(frame, (self.width, self.height))
+            frames.append(frame)
+
+        Character._frame_cache[cache_key] = frames
+        return frames

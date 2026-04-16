@@ -136,6 +136,12 @@ class Game:
     def run_logic(self):
         if self.state == STATE_PLAYING:
             self.player.update(self.enemies, self.projectiles, self.all_sprites)
+
+            # Transition to game over after death animation finishes
+            if self.player.dying and self.player.death_animation_done:
+                self.state = STATE_GAMEOVER
+                return
+
             self._update_level()
             self.enemies.update()
             self.projectiles.update()
@@ -356,7 +362,10 @@ class Game:
                                  count=20, color=RED)
             if self.player.health <= 0:
                 self.player.health = 0
-                self.state = STATE_GAMEOVER
+                self.player.dying = True
+                self.player.set_animation_state("die")
+            else:
+                self.player.set_animation_state("hurt")
 
         # Player -> Gates
         gates_hit = pygame.sprite.spritecollide(self.player, self.gates, False)
