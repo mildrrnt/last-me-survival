@@ -57,7 +57,6 @@ class Player(Character):
             self.move(-1)
         if keys[pygame.K_RIGHT] or keys[pygame.K_d]:
             self.move(1)
-<<<<<<< HEAD:game/entities/player.py
 
         # Mouse drag: follow mouse x position
         if self.dragging:
@@ -70,8 +69,6 @@ class Player(Character):
                 if self.rect.right > SCREEN_WIDTH:
                     self.rect.right = SCREEN_WIDTH
 
-=======
->>>>>>> 5f559eb (feat: restructured the OOP to be straightforward):game/player.py
         self.auto_fire(enemies, projectiles_group, all_sprites)
 
     def auto_fire(self, enemies, projectiles_group, all_sprites):
