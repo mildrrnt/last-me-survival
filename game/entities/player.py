@@ -29,6 +29,9 @@ class Player(pygame.sprite.Sprite):
         # Forward auto-movement speed (slight upward drift)
         self.auto_move_y = 0
 
+        # Mouse drag state
+        self.dragging = False
+
     def _draw_player_sprite(self):
         """Draw a simple character sprite."""
         s = self.base_size
@@ -63,12 +66,30 @@ class Player(pygame.sprite.Sprite):
         if self.rect.right > SCREEN_WIDTH:
             self.rect.right = SCREEN_WIDTH
 
+    def handle_event(self, event):
+        """Handle mouse events for drag movement."""
+        if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
+            self.dragging = True
+        elif event.type == pygame.MOUSEBUTTONUP and event.button == 1:
+            self.dragging = False
+
     def update(self, enemies, projectiles_group, all_sprites):
         keys = pygame.key.get_pressed()
         if keys[pygame.K_LEFT] or keys[pygame.K_a]:
             self.move(-1)
         if keys[pygame.K_RIGHT] or keys[pygame.K_d]:
             self.move(1)
+
+        # Mouse drag: follow mouse x position
+        if self.dragging:
+            mouse_x, _ = pygame.mouse.get_pos()
+            dx = mouse_x - self.rect.centerx
+            if abs(dx) > 1:
+                self.rect.centerx += max(-self.speed, min(self.speed, dx))
+                if self.rect.left < 0:
+                    self.rect.left = 0
+                if self.rect.right > SCREEN_WIDTH:
+                    self.rect.right = SCREEN_WIDTH
 
         self.auto_fire(enemies, projectiles_group, all_sprites)
 
