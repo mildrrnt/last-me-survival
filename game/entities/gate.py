@@ -66,10 +66,54 @@ class Gate(pygame.sprite.Sprite):
         text_y = (h - text_surf.get_height()) // 2
         self.image.blit(text_surf, (text_x, text_y))
 
-    def update(self):
+    # ------------------------------------------------------------------
+    # Spec method: affect
+    # ------------------------------------------------------------------
+    def affect(self, player):
+        """Apply this gate's stat change to player."""
+        if self.is_multiplier:
+            if self.effect_type == 'damage':
+                player.weapon.bonus_damage += player.weapon.damage  # Effectively x2
+            elif self.effect_type == 'fire_rate':
+                player.weapon.bonus_fire_rate -= abs(player.weapon.fire_rate) // 2
+        else:
+            if self.effect_type == 'damage':
+                player.weapon.bonus_damage += self.value
+            elif self.effect_type == 'fire_rate':
+                player.weapon.bonus_fire_rate += self.value
+            elif self.effect_type == 'speed':
+                player.speed = max(2, player.speed + self.value)
+            elif self.effect_type == 'multishot':
+                player.weapon.bonus_bullets += self.value
+
+    # ------------------------------------------------------------------
+    # Spec method: move
+    # ------------------------------------------------------------------
+    def move(self):
+        """Scroll this gate downward; remove when it leaves the screen."""
         self.rect.y += self.speed
         if self.rect.top > SCREEN_HEIGHT:
             self.kill()
+
+    # pygame sprite groups call update() each frame
+    def update(self):
+        self.move()
+
+    # ------------------------------------------------------------------
+    # Spec method: collide
+    # ------------------------------------------------------------------
+    def collide(self, player, game_manager):
+        """Apply effect, trigger visual feedback, and remove this gate."""
+        self.affect(player)
+        game_manager.particle_manager.spawn_gate_effect(
+            player.rect.centerx, player.rect.centery, self.positive
+        )
+        game_manager.ui_manager.add_effect_text(
+            player.rect.centerx, player.rect.top - 20,
+            self.label_text, self.positive
+        )
+        game_manager.screen_shake = max(game_manager.screen_shake, 3)
+        self.kill()
 
 
 class GateRow:
