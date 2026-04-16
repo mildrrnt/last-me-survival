@@ -1,10 +1,9 @@
 import random
-from game.entities.enemy import Zombie, Boss, ChargerEnemy, SplitterEnemy
+from game.entities.enemy import Zombie, Boss
 from game.entities.gate import GateRow
 from game.constants import (
     SCREEN_WIDTH, TOTAL_WAVES, WAVE_ENEMIES_BASE, GATE_INTERVAL_WAVES,
     ENEMY_SMALL, ENEMY_MEDIUM, ENEMY_LARGE, ENEMY_BOSS,
-    ENEMY_CHARGER, ENEMY_SPLITTER,
     WAVE_TYPE_NORMAL, WAVE_TYPE_ELITE, WAVE_TYPE_SWARM,
     WAVE_TYPE_MIDBOSS, WAVE_TYPE_BLOOD_MOON, WAVE_TYPE_FINAL_BOSS
 )
@@ -103,18 +102,7 @@ class LevelGenerator:
         if self.blood_moon_active:
             speed_bonus += 1.0
 
-        if enemy_type == ENEMY_CHARGER:
-            enemy = ChargerEnemy(
-                speed_bonus=speed_bonus,
-                hp_bonus=hp_bonus,
-                player_ref=self.game_manager.player
-            )
-        elif enemy_type == ENEMY_SPLITTER:
-            enemy = SplitterEnemy(
-                speed_bonus=speed_bonus,
-                hp_bonus=hp_bonus
-            )
-        elif enemy_type == ENEMY_BOSS:
+        if enemy_type == ENEMY_BOSS:
             enemy = Boss(
                 speed_bonus=speed_bonus,
                 hp_bonus=hp_bonus
@@ -208,46 +196,32 @@ class LevelGenerator:
             if self.wave_number <= 3:
                 enemies.append(ENEMY_SMALL)
             elif self.wave_number <= 6:
-                if roll < 0.4:
+                if roll < 0.5:
                     enemies.append(ENEMY_SMALL)
-                elif roll < 0.8:
+                else:
+                    enemies.append(ENEMY_MEDIUM)
+            elif self.wave_number <= 12:
+                if roll < 0.20:
+                    enemies.append(ENEMY_SMALL)
+                elif roll < 0.55:
                     enemies.append(ENEMY_MEDIUM)
                 else:
-                    enemies.append(ENEMY_SPLITTER)
-            elif self.wave_number <= 12:
-                if roll < 0.15:
+                    enemies.append(ENEMY_LARGE)
+            elif self.wave_number <= 25:
+                if roll < 0.10:
                     enemies.append(ENEMY_SMALL)
-                elif roll < 0.40:
+                elif roll < 0.30:
                     enemies.append(ENEMY_MEDIUM)
                 elif roll < 0.65:
                     enemies.append(ENEMY_LARGE)
-                elif roll < 0.80:
-                    enemies.append(ENEMY_CHARGER)
-                else:
-                    enemies.append(ENEMY_SPLITTER)
-            elif self.wave_number <= 25:
-                if roll < 0.05:
-                    enemies.append(ENEMY_SMALL)
-                elif roll < 0.20:
-                    enemies.append(ENEMY_MEDIUM)
-                elif roll < 0.45:
-                    enemies.append(ENEMY_LARGE)
-                elif roll < 0.60:
-                    enemies.append(ENEMY_CHARGER)
-                elif roll < 0.75:
-                    enemies.append(ENEMY_SPLITTER)
                 else:
                     enemies.append(ENEMY_BOSS)
             else:
                 # Late game: brutal mix
-                if roll < 0.10:
+                if roll < 0.15:
                     enemies.append(ENEMY_MEDIUM)
-                elif roll < 0.30:
+                elif roll < 0.45:
                     enemies.append(ENEMY_LARGE)
-                elif roll < 0.50:
-                    enemies.append(ENEMY_CHARGER)
-                elif roll < 0.65:
-                    enemies.append(ENEMY_SPLITTER)
                 else:
                     enemies.append(ENEMY_BOSS)
 
@@ -256,7 +230,7 @@ class LevelGenerator:
     def _spawn_elite_wave(self):
         """Fewer but much tougher enemies with glow."""
         count = max(3, self.enemies_per_wave // 2)
-        types = [ENEMY_MEDIUM, ENEMY_LARGE, ENEMY_CHARGER]
+        types = [ENEMY_MEDIUM, ENEMY_LARGE]
         for _ in range(count):
             enemy_type = random.choice(types)
             self.sub_wave_queue.append(enemy_type)
@@ -274,17 +248,15 @@ class LevelGenerator:
         # Then minions
         for _ in range(6):
             roll = random.random()
-            if roll < 0.4:
+            if roll < 0.5:
                 self.sub_wave_queue.append(ENEMY_MEDIUM)
-            elif roll < 0.7:
-                self.sub_wave_queue.append(ENEMY_CHARGER)
             else:
-                self.sub_wave_queue.append(ENEMY_SPLITTER)
+                self.sub_wave_queue.append(ENEMY_LARGE)
 
     def _spawn_blood_moon_wave(self):
         """Wave 30: red tint, all enemies faster (handled by blood_moon_active flag)."""
         count = min(18, self.enemies_per_wave * 2)
-        types = [ENEMY_MEDIUM, ENEMY_LARGE, ENEMY_CHARGER, ENEMY_SPLITTER, ENEMY_BOSS]
+        types = [ENEMY_MEDIUM, ENEMY_LARGE, ENEMY_BOSS]
         for _ in range(count):
             self.sub_wave_queue.append(random.choice(types))
 
@@ -309,24 +281,15 @@ class LevelGenerator:
             self.game_manager.enemies.add(e)
             self.game_manager.all_sprites.add(e)
 
-        # Charger reinforcements
-        for _ in range(3):
-            c = ChargerEnemy(
+        # Medium reinforcements
+        for _ in range(6):
+            e = Zombie(
+                enemy_type=ENEMY_MEDIUM,
                 speed_bonus=self.difficulty_factor * 0.2,
-                hp_bonus=self.difficulty_factor * 4,
-                player_ref=self.game_manager.player
+                hp_bonus=self.difficulty_factor * 4
             )
-            self.game_manager.enemies.add(c)
-            self.game_manager.all_sprites.add(c)
-
-        # Splitter reinforcements
-        for _ in range(3):
-            s = SplitterEnemy(
-                speed_bonus=self.difficulty_factor * 0.2,
-                hp_bonus=self.difficulty_factor * 3
-            )
-            self.game_manager.enemies.add(s)
-            self.game_manager.all_sprites.add(s)
+            self.game_manager.enemies.add(e)
+            self.game_manager.all_sprites.add(e)
 
     def _spawn_gate_row(self):
         num_gates = random.randint(2, 4)

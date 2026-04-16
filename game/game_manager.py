@@ -12,7 +12,7 @@ from game.entities.player import Player
 from game.entities.gate import GateRow
 from game.entities.xp_gem import XPGem
 from game.entities.powerup import PowerUp
-from game.entities.enemy import SplitterEnemy, Boss
+from game.entities.enemy import Boss
 from game.systems.level_generator import LevelGenerator
 from game.systems.particle_manager import ParticleManager
 from game.systems.upgrade_manager import UpgradeManager
@@ -252,13 +252,6 @@ class GameManager:
                         self.screen_shake = max(self.screen_shake, 12)
 
                     self.screen_shake = max(self.screen_shake, 4)
-
-                    # Splitter: spawn children
-                    if isinstance(enemy, SplitterEnemy) and not enemy.has_split:
-                        children = enemy.spawn_children()
-                        for child in children:
-                            self.enemies.add(child)
-                            self.all_sprites.add(child)
 
                     # Power-up drop chance
                     if enemy.enemy_type in POWERUP_DROP_ENEMIES:
