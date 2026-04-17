@@ -4,7 +4,7 @@ import math
 from game.constants import (
     SCREEN_WIDTH, SCREEN_HEIGHT,
     WHITE, RED, GREEN, BLACK, DARK_GRAY, YELLOW, ORANGE, GRAY, GOLD_COLOR,
-    STATE_START, STATE_PLAYING, STATE_UPGRADE, STATE_GAMEOVER, STATE_WIN,
+    STATE_START, STATE_PLAYING, STATE_UPGRADE, STATE_GAMEOVER, STATE_WIN, STATE_PAUSE,
     XP_VALUES, XP_TO_FIRST_LEVEL,
     POWERUP_DROP_CHANCE, POWERUP_DROP_ENEMIES,
     POWERUP_RAPID_FIRE, POWERUP_SHIELD, POWERUP_DAMAGE_BOOST,
@@ -113,6 +113,17 @@ class Game:
         self.boss_flash_timer = 0
         self.spawn_warning_timer = 0
 
+        # --- Pause menu ---
+        btn_w, btn_h = 180, 44
+        cx = SCREEN_WIDTH // 2
+        cy = SCREEN_HEIGHT // 2
+        self.pause_resume_rect = pygame.Rect(cx - btn_w // 2, cy + 40, btn_w, btn_h)
+        self.pause_resign_rect = pygame.Rect(cx - btn_w // 2, cy + 100, btn_w, btn_h)
+
+        # --- End-screen menu (game over / win) ---
+        self.end_restart_rect = pygame.Rect(cx - btn_w // 2, cy + 80, btn_w, btn_h)
+        self.end_home_rect = pygame.Rect(cx - btn_w // 2, cy + 140, btn_w, btn_h)
+
     # -------------------------------------------------------------------------
     # Core loop methods (course-standard naming)
     # -------------------------------------------------------------------------
@@ -124,6 +135,19 @@ class Game:
             if event.type == pygame.MOUSEBUTTONDOWN:
                 self.state = STATE_PLAYING
 
+        elif self.state == STATE_PLAYING:
+            if event.type == pygame.KEYDOWN and event.key == pygame.K_p:
+                self.state = STATE_PAUSE
+
+        elif self.state == STATE_PAUSE:
+            if event.type == pygame.KEYDOWN and event.key == pygame.K_p:
+                self.state = STATE_PLAYING
+            if event.type == pygame.MOUSEBUTTONDOWN:
+                if self.pause_resume_rect.collidepoint(event.pos):
+                    self.state = STATE_PLAYING
+                elif self.pause_resign_rect.collidepoint(event.pos):
+                    self.state = STATE_GAMEOVER
+
         elif self.state == STATE_UPGRADE:
             if event.type == pygame.MOUSEBUTTONDOWN:
                 if self._handle_upgrade_click(event.pos):
@@ -132,6 +156,12 @@ class Game:
         elif self.state in (STATE_GAMEOVER, STATE_WIN):
             if event.type == pygame.KEYDOWN and event.key == pygame.K_r:
                 self.reset_game()
+            if event.type == pygame.MOUSEBUTTONDOWN:
+                if self.end_restart_rect.collidepoint(event.pos):
+                    self.reset_game()
+                elif self.end_home_rect.collidepoint(event.pos):
+                    self.reset_game()
+                    self.state = STATE_START
 
     def run_logic(self):
         if self.state == STATE_PLAYING:
@@ -238,6 +268,8 @@ class Game:
             self._draw_win_screen(screen)
         elif self.state == STATE_UPGRADE:
             self._draw_upgrade_cards(screen)
+        elif self.state == STATE_PAUSE:
+            self._draw_pause_screen(screen)
 
     def reset_game(self):
         self.state = STATE_PLAYING
@@ -962,6 +994,50 @@ class Game:
             border_color = YELLOW if hovered else WHITE
             pygame.draw.rect(screen, border_color, rect, 3 if hovered else 2, border_radius=8)
 
+    def _draw_end_buttons(self, screen):
+        mouse_pos = pygame.mouse.get_pos()
+        for rect, label in ((self.end_restart_rect, "Restart"),
+                            (self.end_home_rect, "Home")):
+            hovered = rect.collidepoint(mouse_pos)
+            bg = (80, 80, 110) if hovered else (60, 60, 80)
+            pygame.draw.rect(screen, bg, rect, border_radius=6)
+            pygame.draw.rect(screen, YELLOW if hovered else WHITE, rect,
+                             3 if hovered else 2, border_radius=6)
+            text_surf = self.font_medium.render(label, True, WHITE)
+            screen.blit(text_surf, (rect.centerx - text_surf.get_width() // 2,
+                                    rect.centery - text_surf.get_height() // 2))
+
+    def _draw_pause_screen(self, screen):
+        overlay = pygame.Surface((SCREEN_WIDTH, SCREEN_HEIGHT))
+        overlay.set_alpha(180)
+        overlay.fill(BLACK)
+        screen.blit(overlay, (0, 0))
+
+        title = self.font_xl.render("PAUSED", True, WHITE)
+        screen.blit(title, (SCREEN_WIDTH // 2 - title.get_width() // 2, SCREEN_HEIGHT // 2 - 200))
+
+        stats = [
+            (f"HP: {self.player.health}/{self.player.max_health}", GREEN),
+            (f"Power: {self.player.power}", YELLOW),
+            (f"Coin: {self.player.gold}", GOLD_COLOR),
+        ]
+        for i, (text, color) in enumerate(stats):
+            surf = self.font_medium.render(text, True, color)
+            screen.blit(surf, (SCREEN_WIDTH // 2 - surf.get_width() // 2,
+                               SCREEN_HEIGHT // 2 - 120 + i * 32))
+
+        mouse_pos = pygame.mouse.get_pos()
+        for rect, label in ((self.pause_resume_rect, "Resume"),
+                            (self.pause_resign_rect, "Resign")):
+            hovered = rect.collidepoint(mouse_pos)
+            bg = (80, 80, 110) if hovered else (60, 60, 80)
+            pygame.draw.rect(screen, bg, rect, border_radius=6)
+            pygame.draw.rect(screen, YELLOW if hovered else WHITE, rect,
+                             3 if hovered else 2, border_radius=6)
+            text_surf = self.font_medium.render(label, True, WHITE)
+            screen.blit(text_surf, (rect.centerx - text_surf.get_width() // 2,
+                                    rect.centery - text_surf.get_height() // 2))
+
     def _draw_start_screen(self, screen):
         overlay = pygame.Surface((SCREEN_WIDTH, SCREEN_HEIGHT))
         overlay.fill((20, 20, 30))
@@ -992,8 +1068,7 @@ class Game:
         if self.highest_combo >= COMBO_TIER_1:
             combo_stat = self.font_small.render(f"Best Combo: {self.highest_combo}", True, YELLOW)
             screen.blit(combo_stat, (SCREEN_WIDTH // 2 - combo_stat.get_width() // 2, SCREEN_HEIGHT // 2 + 20))
-        restart = self.font_medium.render("Press R to Restart", True, WHITE)
-        screen.blit(restart, (SCREEN_WIDTH // 2 - restart.get_width() // 2, SCREEN_HEIGHT // 2 + 50))
+        self._draw_end_buttons(screen)
 
     def _draw_win_screen(self, screen):
         overlay = pygame.Surface((SCREEN_WIDTH, SCREEN_HEIGHT))
@@ -1010,8 +1085,7 @@ class Game:
         if self.highest_combo >= COMBO_TIER_1:
             combo_stat = self.font_small.render(f"Best Combo: {self.highest_combo}", True, YELLOW)
             screen.blit(combo_stat, (SCREEN_WIDTH // 2 - combo_stat.get_width() // 2, SCREEN_HEIGHT // 2 + 60))
-        restart = self.font_medium.render("Press R to Play Again", True, WHITE)
-        screen.blit(restart, (SCREEN_WIDTH // 2 - restart.get_width() // 2, SCREEN_HEIGHT // 2 + 90))
+        self._draw_end_buttons(screen)
 
     def _draw_background(self, screen, offset_x, offset_y):
         screen.fill((35, 35, 45))
