@@ -1,0 +1,4 @@
+- Consider game class. Should display function be included in the game class or standalone.
+- Talk about how sprite is optimized when loaded
+    - Try simulating w/o cached and cached
+- Talk in terms of how class is designed
