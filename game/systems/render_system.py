@@ -154,6 +154,21 @@ class RenderSystem:
             surf = self.font_small.render(line, True, GRAY)
             screen.blit(surf, (SCREEN_WIDTH // 2 - surf.get_width() // 2, 530 + i * 25))
 
+        # Toggle Auto Aim Button
+        mouse_pos = pygame.mouse.get_pos()
+        rect = self.game.toggle_aim_rect
+        hovered = rect.collidepoint(mouse_pos)
+        bg = (80, 80, 110) if hovered else (60, 60, 80)
+        pygame.draw.rect(screen, bg, rect, border_radius=6)
+        pygame.draw.rect(screen, YELLOW if hovered else WHITE, rect, 3 if hovered else 2, border_radius=6)
+        
+        status_text = "Auto Aim: ON" if self.game.auto_aim else "Auto Aim: OFF"
+        text_surf = self.font_medium.render(status_text, True, WHITE)
+        screen.blit(
+            text_surf,
+            (rect.centerx - text_surf.get_width() // 2, rect.centery - text_surf.get_height() // 2),
+        )
+
     def _draw_ui(self, screen):
         self._draw_floating_texts(screen)
         self._draw_health_bar(screen)
@@ -165,6 +180,15 @@ class RenderSystem:
         self._draw_powerup_timers(screen)
         self._draw_wave_announcement(screen)
         self._draw_xp_bar(screen)
+        self._draw_auto_aim_status(screen)
+
+    def _draw_auto_aim_status(self, screen):
+        game = self.game
+        status_text = "Auto Aim ON" if game.auto_aim else "Auto Aim OFF"
+        color = GREEN if game.auto_aim else RED
+        surf = self.font_small.render(status_text, True, color)
+        # Positioned under the weapon badge (which is at y=52)
+        screen.blit(surf, (10, 78))
 
     def _draw_floating_texts(self, screen):
         for ft in self.floating_texts:
@@ -370,7 +394,11 @@ class RenderSystem:
             screen.blit(surf, (SCREEN_WIDTH // 2 - surf.get_width() // 2, SCREEN_HEIGHT // 2 - 120 + i * 32))
 
         mouse_pos = pygame.mouse.get_pos()
-        for rect, label in ((game.pause_resume_rect, "Resume"), (game.pause_resign_rect, "Resign")):
+        for rect, label in (
+            (game.pause_resume_rect, "Resume"),
+            (game.pause_resign_rect, "Resign"),
+            (game.toggle_aim_rect, "Auto Aim: ON" if game.auto_aim else "Auto Aim: OFF")
+        ):
             hovered = rect.collidepoint(mouse_pos)
             bg = (80, 80, 110) if hovered else (60, 60, 80)
             pygame.draw.rect(screen, bg, rect, border_radius=6)
