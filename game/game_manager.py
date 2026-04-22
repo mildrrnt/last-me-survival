@@ -1,3 +1,21 @@
+from game.game import Game
+
+
+class GameManager(Game):
+    """Backward-compatible adapter for legacy code paths.
+
+    This keeps the old GameManager method names while delegating to the
+    refactored Game implementation.
+    """
+
+    def handle_event(self, event):
+        self.process_events(event)
+
+    def update(self):
+        self.run_logic()
+
+    def draw(self):
+        self.display_frame(self.screen)
 import pygame
 import random
 from game.constants import (

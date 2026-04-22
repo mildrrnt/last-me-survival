@@ -9,7 +9,7 @@ from game.character import Character
 
 
 class Zombie(Character):
-    def __init__(self, enemy_type=ENEMY_SMALL, speed_bonus=0, hp_bonus=0):
+    def __init__(self, enemy_type=ENEMY_SMALL, speed_bonus=0.0, hp_bonus=0.0):
         config = ENEMY_CONFIG[enemy_type]
         super().__init__(
             hp=config["hp"] + int(hp_bonus),
@@ -162,7 +162,7 @@ class Zombie(Character):
 class Boss(Zombie):
     """Boss zombie — larger, tougher, with summon and warcry abilities."""
 
-    def __init__(self, speed_bonus=0, hp_bonus=0):
+    def __init__(self, speed_bonus=0.0, hp_bonus=0.0):
         super().__init__(enemy_type=ENEMY_BOSS, speed_bonus=speed_bonus, hp_bonus=hp_bonus)
 
         # Summon cooldown (frames)
