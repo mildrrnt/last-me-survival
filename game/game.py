@@ -1,4 +1,6 @@
 import random
+import json
+import os
 
 import pygame
 
@@ -30,10 +32,15 @@ class Game:
     def __init__(self, screen):
         self.screen = screen
         self.state = STATE_START
+        self.save_file = "save_data.json"
 
         self._create_groups()
         self._create_player()
         self._create_ui_buttons()
+
+        self.total_coins = 0
+        self.best_combo = 0
+        self.load_data()
 
         self.combo_count = 0
         self.highest_combo = 0
@@ -67,6 +74,27 @@ class Game:
 
         self.wave_system.reset()
         self.upgrade_system.reset_progression()
+
+    def save_data(self):
+        data = {
+            "total_coins": self.total_coins,
+            "best_combo": self.best_combo
+        }
+        try:
+            with open(self.save_file, "w") as f:
+                json.dump(data, f)
+        except Exception as e:
+            print(f"Error saving data: {e}")
+
+    def load_data(self):
+        if os.path.exists(self.save_file):
+            try:
+                with open(self.save_file, "r") as f:
+                    data = json.load(f)
+                    self.total_coins = data.get("total_coins", 0)
+                    self.best_combo = data.get("best_combo", 0)
+            except Exception as e:
+                print(f"Error loading data: {e}")
 
     def _create_groups(self):
         self.all_sprites = pygame.sprite.Group()
@@ -114,6 +142,7 @@ class Game:
                 if self.pause_resume_rect.collidepoint(event.pos):
                     self.state = STATE_PLAYING
                 elif self.pause_resign_rect.collidepoint(event.pos):
+                    self.on_game_over()
                     self.state = STATE_GAMEOVER
                 elif self.toggle_aim_rect.collidepoint(event.pos):
                     self.auto_aim = not self.auto_aim
@@ -138,6 +167,7 @@ class Game:
             self.player.update(self.enemies, self.projectiles, self.all_sprites, self.auto_aim)
 
             if self.player.dying and self.player.death_animation_done:
+                self.on_game_over()
                 self.state = STATE_GAMEOVER
                 return
 
@@ -195,7 +225,16 @@ class Game:
 
         self.render_system.draw(screen, offset_x, offset_y)
 
+    def on_game_over(self):
+        """Called when game ends to update permanent stats."""
+        self.total_coins += self.player.gold
+        if self.highest_combo > self.best_combo:
+            self.best_combo = self.highest_combo
+        self.save_data()
+
     def reset_game(self):
+        # We don't call on_game_over here because it's called when player dies
+        # or when user resigns. reset_game is for starting a fresh run.
         self.state = STATE_PLAYING
 
         self.all_sprites.empty()
@@ -230,6 +269,7 @@ class Game:
         self.collision_system.check_collisions()
 
     def trigger_win(self):
+        self.on_game_over()
         self.state = STATE_WIN
 
     def _register_kill(self):
