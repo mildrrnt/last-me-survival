@@ -145,6 +145,14 @@ class RenderSystem:
         sub = self.font_medium.render("Survive the zombie horde!", True, GRAY)
         screen.blit(sub, (SCREEN_WIDTH // 2 - sub.get_width() // 2, 280))
 
+        # Permanent Stats
+        best_text = f"Best Combo: {self.game.best_combo}"
+        coin_text = f"Total Gold: {self.game.total_coins}"
+        best_surf = self.font_medium.render(best_text, True, YELLOW)
+        coin_surf = self.font_medium.render(coin_text, True, GOLD_COLOR)
+        screen.blit(best_surf, (SCREEN_WIDTH // 2 - best_surf.get_width() // 2, 330))
+        screen.blit(coin_surf, (SCREEN_WIDTH // 2 - coin_surf.get_width() // 2, 360))
+
         if (pygame.time.get_ticks() // 500) % 2 == 0:
             instr = self.font_medium.render("Press SPACE to Start", True, WHITE)
             screen.blit(instr, (SCREEN_WIDTH // 2 - instr.get_width() // 2, 450))
