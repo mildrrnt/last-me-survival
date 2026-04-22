@@ -138,6 +138,7 @@ class Game:
         elif self.state == STATE_PLAYING:
             if event.type == pygame.KEYDOWN and event.key == pygame.K_p:
                 self.state = STATE_PAUSE
+            self.player.handle_event(event)
 
         elif self.state == STATE_PAUSE:
             if event.type == pygame.KEYDOWN and event.key == pygame.K_p:

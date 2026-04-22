@@ -3,7 +3,7 @@ from game.constants import (
     SCREEN_WIDTH, SCREEN_HEIGHT, WHITE, BLUE, DARK_GRAY,
     WEAPON_SINGLE, WEAPON_SPREAD, WEAPON_RAPID
 )
-from game.entities.weapon import Weapon
+from game.weapon import Weapon
 
 
 class Player(pygame.sprite.Sprite):

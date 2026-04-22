@@ -8,15 +8,26 @@ from game.constants import (
     POWERUP_COLORS,
     WAVE_TYPE_BLOOD_MOON
 )
-from game.entities.player import Player
-from game.entities.gate import GateRow
-from game.entities.xp_gem import XPGem
-from game.entities.powerup import PowerUp
-from game.systems.level_generator import LevelGenerator
-from game.systems.particle_manager import ParticleManager
-from game.systems.upgrade_manager import UpgradeManager
-from game.systems.ui_manager import UIManager
-from game.systems.combo_manager import ComboManager
+try:
+    from game.entities.player import Player
+    from game.entities.gate import GateRow
+    from game.entities.xp_gem import XPGem
+    from game.entities.powerup import PowerUp
+    from game.systems.level_generator import LevelGenerator
+    from game.systems.particle_manager import ParticleManager
+    from game.systems.upgrade_manager import UpgradeManager
+    from game.systems.ui_manager import UIManager
+    from game.systems.combo_manager import ComboManager
+except ImportError:
+    from game.player import Player
+    from game.gate import GateRow
+    from game.xp_gem import XPGem
+    from game.powerup import PowerUp
+    from game.level_generator import LevelGenerator
+    from game.particle_manager import ParticleManager
+    from game.upgrade_manager import UpgradeManager
+    from game.ui_manager import UIManager
+    from game.combo_manager import ComboManager
 
 
 class GameManager:
@@ -199,44 +210,44 @@ class GameManager:
                     bullet.collide(enemy, self)
 
             if enemy.health <= 0:
-                    # Gold drop
-                    gold = enemy.gold_value
-                    self.player.gold += gold
-                    self.ui_manager.add_gold_text(enemy.rect.centerx, enemy.rect.top - 15, gold)
+                # Gold drop
+                gold = enemy.gold_value
+                self.player.gold += gold
+                self.ui_manager.add_gold_text(enemy.rect.centerx, enemy.rect.top - 15, gold)
 
-                    # Death effects
-                    self.particle_manager.spawn_death_explosion(
-                        enemy.rect.centerx, enemy.rect.centery, enemy.enemy_type
-                    )
-                    self.particle_manager.spawn_gold(
-                        enemy.rect.centerx, enemy.rect.centery, gold
-                    )
+                # Death effects
+                self.particle_manager.spawn_death_explosion(
+                    enemy.rect.centerx, enemy.rect.centery, enemy.enemy_type
+                )
+                self.particle_manager.spawn_gold(
+                    enemy.rect.centerx, enemy.rect.centery, gold
+                )
 
-                    # Spawn XP gem
-                    xp_val = XP_VALUES.get(enemy.enemy_type, 1)
-                    gem = XPGem(enemy.rect.centerx, enemy.rect.centery, xp_val)
-                    self.gems.add(gem)
+                # Spawn XP gem
+                xp_val = XP_VALUES.get(enemy.enemy_type, 1)
+                gem = XPGem(enemy.rect.centerx, enemy.rect.centery, xp_val)
+                self.gems.add(gem)
 
-                    # Combo
-                    self.combo_manager.register_kill()
+                # Combo
+                self.combo_manager.register_kill()
 
-                    # Boss kill flash
-                    if enemy.enemy_type == "boss":
-                        self.boss_flash_timer = 10
-                        self.screen_shake = max(self.screen_shake, 12)
+                # Boss kill flash
+                if enemy.enemy_type == "boss":
+                    self.boss_flash_timer = 10
+                    self.screen_shake = max(self.screen_shake, 12)
 
-                    self.screen_shake = max(self.screen_shake, 4)
+                self.screen_shake = max(self.screen_shake, 4)
 
-                    # Power-up drop chance
-                    if enemy.enemy_type in POWERUP_DROP_ENEMIES:
-                        if random.random() < POWERUP_DROP_CHANCE:
-                            ptype = random.choice([
-                                POWERUP_RAPID_FIRE, POWERUP_SHIELD, POWERUP_DAMAGE_BOOST
-                            ])
-                            pu = PowerUp(enemy.rect.centerx, enemy.rect.centery, ptype)
-                            self.powerups.add(pu)
+                # Power-up drop chance
+                if enemy.enemy_type in POWERUP_DROP_ENEMIES:
+                    if random.random() < POWERUP_DROP_CHANCE:
+                        ptype = random.choice([
+                            POWERUP_RAPID_FIRE, POWERUP_SHIELD, POWERUP_DAMAGE_BOOST
+                        ])
+                        pu = PowerUp(enemy.rect.centerx, enemy.rect.centery, ptype)
+                        self.powerups.add(pu)
 
-                    enemy.kill()
+                enemy.kill()
 
         # Gem -> Player collection (magnet already pulls them close)
         collected_gems = pygame.sprite.spritecollide(self.player, self.gems, True)
