@@ -51,7 +51,7 @@ class Game:
         self.particles = []
         self.upgrade_cards = []
         self.active_powerups = {}
-        self._active_powerup_instances = {}
+        self.active_powerup_instances = {}
 
         self.screen_shake = 0
         self.bg_scroll_y = 0
@@ -261,7 +261,7 @@ class Game:
         self.screen_shake = 0
         self.bg_scroll_y = 0
         self.active_powerups = {}
-        self._active_powerup_instances = {}
+        self.active_powerup_instances = {}
         self.boss_flash_timer = 0
         self.spawn_warning_timer = 0
 
@@ -272,19 +272,19 @@ class Game:
         self.on_game_over()
         self.state = STATE_WIN
 
-    def _register_kill(self):
+    def register_kill(self):
         self.combo_count += 1
         self.combo_just_increased = True
         self.combo_pulse_timer = 15
         if self.combo_count > self.highest_combo:
             self.highest_combo = self.combo_count
-        self._update_combo_multiplier()
+        self.update_combo_multiplier()
 
-    def _on_damage_taken(self):
+    def on_damage_taken(self):
         self.combo_count = 0
         self.combo_multiplier = 1.0
 
-    def _update_combo_multiplier(self):
+    def update_combo_multiplier(self):
         if self.combo_count >= COMBO_TIER_3:
             self.combo_multiplier = COMBO_MULTIPLIERS[COMBO_TIER_3]
         elif self.combo_count >= COMBO_TIER_2:
@@ -294,7 +294,7 @@ class Game:
         else:
             self.combo_multiplier = 1.0
 
-    def _get_xp_multiplied(self, base_xp):
+    def get_xp_multiplied(self, base_xp):
         return int(base_xp * self.combo_multiplier)
 
     def _update_combo(self):

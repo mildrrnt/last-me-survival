@@ -35,8 +35,8 @@ class PowerUp(pygame.sprite.Sprite):
 		self.drift_speed = 0.5
 		self.lifetime = 480
 
-		self._original_fire_rate = None
-		self._original_damage = None
+		self.original_fire_rate = None
+		self.original_damage = None
 
 		self.icon_map = {
 			POWERUP_RAPID_FIRE: "R",
@@ -85,36 +85,36 @@ class PowerUp(pygame.sprite.Sprite):
 		"""Apply this powerup's effect to player and register the active timer."""
 		if self.type == POWERUP_RAPID_FIRE:
 			if self.type not in game.active_powerups:
-				self._original_fire_rate = player.weapon.bonus_fire_rate
+				self.original_fire_rate = player.weapon.bonus_fire_rate
 			else:
-				prev = game._active_powerup_instances.get(self.type)
-				self._original_fire_rate = (
-					prev._original_fire_rate if prev else player.weapon.bonus_fire_rate
+				prev = game.active_powerup_instances.get(self.type)
+				self.original_fire_rate = (
+					prev.original_fire_rate if prev else player.weapon.bonus_fire_rate
 				)
-			player.weapon.bonus_fire_rate = self._original_fire_rate - self.value
+			player.weapon.bonus_fire_rate = self.original_fire_rate - self.value
 
 		elif self.type == POWERUP_SHIELD:
 			pass  # Shield is checked per-frame in Game.check_collisions
 
 		elif self.type == POWERUP_DAMAGE_BOOST:
 			if self.type not in game.active_powerups:
-				self._original_damage = player.weapon.bonus_damage
+				self.original_damage = player.weapon.bonus_damage
 			else:
-				prev = game._active_powerup_instances.get(self.type)
-				self._original_damage = (
-					prev._original_damage if prev else player.weapon.bonus_damage
+				prev = game.active_powerup_instances.get(self.type)
+				self.original_damage = (
+					prev.original_damage if prev else player.weapon.bonus_damage
 				)
-			player.weapon.bonus_damage = self._original_damage + self.value
+			player.weapon.bonus_damage = self.original_damage + self.value
 
 		game.active_powerups[self.type] = self.duration
-		game._active_powerup_instances[self.type] = self
+		game.active_powerup_instances[self.type] = self
 
 	def deactivate(self, player):
 		"""Restore player stats to their pre-activation values."""
-		if self.type == POWERUP_RAPID_FIRE and self._original_fire_rate is not None:
-			player.weapon.bonus_fire_rate = self._original_fire_rate
-		elif self.type == POWERUP_DAMAGE_BOOST and self._original_damage is not None:
-			player.weapon.bonus_damage = self._original_damage
+		if self.type == POWERUP_RAPID_FIRE and self.original_fire_rate is not None:
+			player.weapon.bonus_fire_rate = self.original_fire_rate
+		elif self.type == POWERUP_DAMAGE_BOOST and self.original_damage is not None:
+			player.weapon.bonus_damage = self.original_damage
 
 	def collide(self, player, game):
 		"""Activate effect, trigger visual feedback, and remove this pickup."""
