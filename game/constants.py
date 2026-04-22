@@ -4,7 +4,7 @@ import pygame
 SCREEN_WIDTH = 480
 SCREEN_HEIGHT = 800
 FPS = 60
-TITLE = "Last Z Survival"
+TITLE = "Last Me Survival"
 
 # Colors
 WHITE = (255, 255, 255)
