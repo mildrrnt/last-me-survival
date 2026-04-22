@@ -10,8 +10,8 @@ from game.constants import (
     RED,
     XP_VALUES,
 )
-from game.powerup import PowerUp
-from game.xp_gem import XPGem
+from game.entities.powerup import PowerUp
+from game.entities.xp_gem import XPGem
 
 
 class CollisionSystem:

@@ -16,8 +16,8 @@ from game.constants import (
     WAVE_TYPE_NORMAL,
     WAVE_TYPE_SWARM,
 )
-from game.enemy import Boss, Zombie
-from game.gate import spawn_gate_row
+from game.entities.enemy import Boss, Zombie
+from game.entities.gate import spawn_gate_row
 
 
 class WaveSystem:

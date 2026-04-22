@@ -16,7 +16,7 @@ from game.constants import (
     STATE_UPGRADE,
     STATE_WIN,
 )
-from game.player import Player
+from game.entities.player import Player
 from game.systems.collision_system import CollisionSystem
 from game.systems.particle_system import ParticleSystem
 from game.systems.render_system import RenderSystem
@@ -50,6 +50,12 @@ class Game:
         self.bg_scroll_y = 0
         self.boss_flash_timer = 0
         self.spawn_warning_timer = 0
+
+        # Initialized by subsystem reset methods; declared here for clarity and tooling.
+        self.xp = 0
+        self.xp_to_next_level = 0
+        self.spawn_timer = 0
+        self.spawn_delay = 0
 
         self.wave_system = WaveSystem(self)
         self.upgrade_system = UpgradeSystem(self)

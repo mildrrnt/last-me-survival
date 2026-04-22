@@ -29,7 +29,7 @@ from game.constants import (
     WAVE_TYPE_SWARM,
     YELLOW,
 )
-from game.gate import draw_lane_dividers
+from game.entities.gate import draw_lane_dividers
 
 
 class RenderSystem:
