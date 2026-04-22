@@ -38,7 +38,7 @@ class CollisionSystem:
                 xp_val = XP_VALUES.get(enemy.enemy_type, 1)
                 game.gems.add(XPGem(enemy.rect.centerx, enemy.rect.centery, xp_val))
 
-                game._register_kill()
+                game.register_kill()
 
                 if enemy.enemy_type == ENEMY_BOSS:
                     game.boss_flash_timer = 10
@@ -55,7 +55,7 @@ class CollisionSystem:
         # Gem -> Player
         collected_gems = pygame.sprite.spritecollide(game.player, game.gems, True)
         for gem in collected_gems:
-            xp_gain = game._get_xp_multiplied(gem.xp_value)
+            xp_gain = game.get_xp_multiplied(gem.xp_value)
             game.xp += xp_gain
             game.add_damage_text(
                 game.player.rect.centerx,
@@ -83,7 +83,7 @@ class CollisionSystem:
 
             damage = enemy.damage
             game.player.health -= damage
-            game._on_damage_taken()
+            game.on_damage_taken()
             game.add_damage_text(game.player.rect.centerx, game.player.rect.top, -damage)
             game.screen_shake = max(game.screen_shake, 15)
             game.spawn_explosion(game.player.rect.centerx, game.player.rect.centery, count=20, color=RED)

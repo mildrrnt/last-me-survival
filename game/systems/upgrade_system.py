@@ -103,7 +103,7 @@ class UpgradeSystem:
 
         for ptype in expired:
             del self.game.active_powerups[ptype]
-            pu_obj = self.game._active_powerup_instances.pop(ptype, None)
+            pu_obj = self.game.active_powerup_instances.pop(ptype, None)
             if pu_obj:
                 pu_obj.deactivate(self.game.player)
 
