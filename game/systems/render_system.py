@@ -139,7 +139,7 @@ class RenderSystem:
         overlay.fill((20, 20, 30))
         screen.blit(overlay, (0, 0))
 
-        title = self.font_xl.render("LAST Z SURVIVAL", True, RED)
+        title = self.font_xl.render("LAST ME SURVIVAL", True, RED)
         screen.blit(title, (SCREEN_WIDTH // 2 - title.get_width() // 2, 200))
 
         sub = self.font_medium.render("Survive the zombie horde!", True, GRAY)
