@@ -63,6 +63,8 @@ class Game:
         self.render_system = RenderSystem(self)
         self.collision_system = CollisionSystem(self)
 
+        self.auto_aim = True
+
         self.wave_system.reset()
         self.upgrade_system.reset_progression()
 
@@ -88,13 +90,17 @@ class Game:
         self.pause_resign_rect = pygame.Rect(cx - btn_w // 2, cy + 100, btn_w, btn_h)
         self.end_restart_rect = pygame.Rect(cx - btn_w // 2, cy + 80, btn_w, btn_h)
         self.end_home_rect = pygame.Rect(cx - btn_w // 2, cy + 140, btn_w, btn_h)
+        self.toggle_aim_rect = pygame.Rect(cx - btn_w // 2, cy + 200, btn_w, btn_h)
 
     def process_events(self, event):
         if self.state == STATE_START:
             if event.type == pygame.KEYDOWN and event.key == pygame.K_SPACE:
                 self.state = STATE_PLAYING
             if event.type == pygame.MOUSEBUTTONDOWN:
-                self.state = STATE_PLAYING
+                if self.toggle_aim_rect.collidepoint(event.pos):
+                    self.auto_aim = not self.auto_aim
+                else:
+                    self.state = STATE_PLAYING
 
         elif self.state == STATE_PLAYING:
             if event.type == pygame.KEYDOWN and event.key == pygame.K_p:
@@ -109,6 +115,8 @@ class Game:
                     self.state = STATE_PLAYING
                 elif self.pause_resign_rect.collidepoint(event.pos):
                     self.state = STATE_GAMEOVER
+                elif self.toggle_aim_rect.collidepoint(event.pos):
+                    self.auto_aim = not self.auto_aim
 
         elif self.state == STATE_UPGRADE:
             if event.type == pygame.MOUSEBUTTONDOWN:
@@ -127,7 +135,7 @@ class Game:
 
     def run_logic(self):
         if self.state == STATE_PLAYING:
-            self.player.update(self.enemies, self.projectiles, self.all_sprites)
+            self.player.update(self.enemies, self.projectiles, self.all_sprites, self.auto_aim)
 
             if self.player.dying and self.player.death_animation_done:
                 self.state = STATE_GAMEOVER

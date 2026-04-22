@@ -96,7 +96,7 @@ class Player(Character):
 		elif event.type == pygame.MOUSEBUTTONUP and event.button == 1:
 			self.dragging = False
 
-	def update(self, enemies, projectiles_group, all_sprites):
+	def update(self, enemies, projectiles_group, all_sprites, auto_aim=True):
 		if self.dying:
 			self._advance_animation()
 			return
@@ -131,15 +131,14 @@ class Player(Character):
 				self.set_animation_state("idle")
 
 		self._advance_animation()
-		self.auto_fire(enemies, projectiles_group, all_sprites)
+		self.auto_fire(enemies, projectiles_group, all_sprites, auto_aim)
 
-	def auto_fire(self, enemies, projectiles_group, all_sprites):
-		target = self._find_nearest_enemy(enemies)
-		if target:
-			self.weapon.fire(
-				self.rect.centerx, self.rect.top,
-				target, projectiles_group, all_sprites
-			)
+	def auto_fire(self, enemies, projectiles_group, all_sprites, auto_aim=True):
+		target = self._find_nearest_enemy(enemies) if auto_aim else None
+		self.weapon.fire(
+			self.rect.centerx, self.rect.top,
+			target, projectiles_group, all_sprites
+		)
 
 	def _find_nearest_enemy(self, enemies):
 		nearest = None

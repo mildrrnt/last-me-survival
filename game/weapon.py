@@ -49,12 +49,15 @@ class Weapon:
         total_spread = self.spread_angle * (count - 1)
         start_angle = -total_spread / 2
 
+        target_x = target.rect.centerx if target else start_x
+        target_y = target.rect.centery if target else start_y - 200
+
         for i in range(count):
             angle_offset = start_angle + i * self.spread_angle if count > 1 else 0
-            spread_x = target.rect.centerx + math.tan(math.radians(angle_offset)) * 200
+            spread_x = target_x + math.tan(math.radians(angle_offset)) * 200
             p = Bullet(
                 start_x, start_y,
-                spread_x, target.rect.centery,
+                spread_x, target_y,
                 self.damage, self.color
             )
             projectiles_group.add(p)
